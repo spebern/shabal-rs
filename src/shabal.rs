@@ -1,3 +1,4 @@
+use block_buffer::block_padding::Iso7816;
 use block_buffer::byteorder::{ByteOrder, LE};
 use block_buffer::BlockBuffer;
 use digest::generic_array::typenum::{U24, U28, U32, U48, U64};
@@ -70,8 +71,8 @@ impl Engine256 {
 
     fn finish(&mut self) {
         let state = &mut self.state;
-        self.buffer
-            .len64_padding::<LE, _>(0, |input| state.process_final_block(input));
+        let block = self.buffer.pad_with::<Iso7816>().unwrap();
+        state.process_final_block(block);
     }
 
     fn reset(&mut self, a: &[u32; 12], b: &[u32; 16], c: &[u32; 16]) {

@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/spebern/shabal-rs.svg?branch=master)](https://travis-ci.org/spebern/shabal-rs)
+[![Build Status](https://travis-ci.org/spebern/shabal-rs.svg?branch=master)](https://travis-ci.org/spebern/shabal-rs) [![dependency status](https://deps.rs/repo/github/spebern/shabal-rs/status.svg)](https://deps.rs/repo/github/spebern/shabal-rs) 
 
 # shabal
 

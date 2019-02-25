@@ -16,7 +16,7 @@ type BlockSize = U64;
 type Block = GenericArray<u8, BlockSize>;
 
 /// A structure that represents that state of a digest computation for the
-/// Sabal 512 family of digest functions
+/// Sabal family of digest functions
 #[derive(Clone)]
 struct Engine256State {
     a: [u32; 12],
@@ -48,7 +48,7 @@ impl Engine256State {
     }
 }
 
-/// A structure that keeps track of the state of the Shabal-256 operation and
+/// A structure that keeps track of the state of the Shabal operation and
 /// contains the logic necessary to perform the final calculations.
 #[derive(Clone)]
 struct Engine256 {
@@ -81,7 +81,7 @@ impl Engine256 {
     }
 }
 
-/// The Shabal-256 hash algorithm with the Shabal-512 initial hash value.
+/// The Shabal hash algorithm with the Shabal-512 initial hash value.
 #[derive(Clone)]
 pub struct Shabal512 {
     engine: Engine256,
@@ -122,7 +122,8 @@ impl Reset for Shabal512 {
     }
 }
 
-/// The Shabal-256 hash algorithm with the Shabal-384 initial hash value.
+/// The Shabal hash algorithm with the Shabal-384 initial hash value. The result
+/// is truncated to 384 bits.
 #[derive(Clone)]
 pub struct Shabal384 {
     engine: Engine256,
@@ -163,7 +164,8 @@ impl Reset for Shabal384 {
     }
 }
 
-/// The Shabal-256 hash algorithm with the Shabal-256 initial hash value.
+/// The Shabal hash algorithm with the Shabal-256 initial hash value. The result
+/// is truncated to 256 bits.
 #[derive(Clone)]
 pub struct Shabal256 {
     engine: Engine256,
@@ -204,7 +206,7 @@ impl Reset for Shabal256 {
     }
 }
 
-/// The Shabal-256 hash algorithm with the Shabal-224 initial hash value. The result
+/// The Shabal hash algorithm with the Shabal-224 initial hash value. The result
 /// is truncated to 224 bits.
 #[derive(Clone)]
 pub struct Shabal224 {
@@ -246,7 +248,7 @@ impl Reset for Shabal224 {
     }
 }
 
-/// The Shabal-256 hash algorithm with the Shabal-192 initial hash value. The result
+/// The Shabal hash algorithm with the Shabal-192 initial hash value. The result
 /// is truncated to 192 bits.
 #[derive(Clone)]
 pub struct Shabal192 {

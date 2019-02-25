@@ -18,7 +18,7 @@ type Block = GenericArray<u8, BlockSize>;
 /// A structure that represents that state of a digest computation for the
 /// Shabal family of digest functions
 #[derive(Clone)]
-struct Engine256State {
+struct EngineState {
     a: [u32; 12],
     b: [u32; 16],
     c: [u32; 16],
@@ -26,7 +26,7 @@ struct Engine256State {
     wlow: u32,
 }
 
-impl Engine256State {
+impl EngineState {
     fn new(a: &[u32; 12], b: &[u32; 16], c: &[u32; 16]) -> Self {
         Self {
             a: *a,
@@ -133,14 +133,14 @@ impl Engine256State {
 #[derive(Clone)]
 struct Engine256 {
     buffer: BlockBuffer<BlockSize>,
-    state: Engine256State,
+    state: EngineState,
 }
 
 impl Engine256 {
     fn new(a: &[u32; 12], b: &[u32; 16], c: &[u32; 16]) -> Engine256 {
         Engine256 {
             buffer: Default::default(),
-            state: Engine256State::new(a, b, c),
+            state: EngineState::new(a, b, c),
         }
     }
 
@@ -156,7 +156,7 @@ impl Engine256 {
     }
 
     fn reset(&mut self, a: &[u32; 12], b: &[u32; 16], c: &[u32; 16]) {
-        self.state = Engine256State::new(a, b, c);
+        self.state = EngineState::new(a, b, c);
         self.buffer.reset();
     }
 }
@@ -404,7 +404,7 @@ fn read_m(input: &[u8; 64]) -> [u32; 16] {
     m
 }
 
-fn compress(state: &mut Engine256State, input: &[u8; 64]) {
+fn compress(state: &mut EngineState, input: &[u8; 64]) {
     let mut m = read_m(input);
     state.add_m(&m);
     state.xor_w();
@@ -414,7 +414,7 @@ fn compress(state: &mut Engine256State, input: &[u8; 64]) {
     state.inc_w();
 }
 
-fn compress_final(state: &mut Engine256State, input: &[u8; 64]) {
+fn compress_final(state: &mut EngineState, input: &[u8; 64]) {
     let mut m = read_m(input);
     state.add_m(&m);
     state.xor_w();

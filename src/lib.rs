@@ -26,7 +26,7 @@
 //! hasher.input(b"helloworld");
 //!
 //! // acquire hash digest in the form of GenericArray,
-//! // which in this case is equivalent to [u8; 16]
+//! // which in this case is equivalent to [u8; 32]
 //! let result = hasher.result();
 //! assert_eq!(result[..], hex!("d945dee21ffca23ac232763aa9cac6c15805f144db9d6c97395437e01c8595a8"));
 //! # }

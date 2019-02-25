@@ -61,7 +61,6 @@ impl Engine256 {
     }
 
     fn input(&mut self, input: &[u8]) {
-        let input = input.as_ref();
         let state = &mut self.state;
         self.buffer.input(input, |input| state.process_block(input));
     }
@@ -194,8 +193,8 @@ fn compress(state: &mut Engine256State, input: &[u8; 64]) {
         b[i] = b[i].wrapping_add(m[i]);
     }
 
-    a[0] = a[0] ^ state.wlow;
-    a[1] = a[1] ^ state.whigh;
+    a[0] ^= state.wlow;
+    a[1] ^= state.whigh;
 
     perm(a, b, c, &mut m);
 
@@ -223,23 +222,23 @@ fn compress_final(state: &mut Engine256State, input: &[u8; 64]) {
         b[i] = b[i].wrapping_add(m[i]);
     }
 
-    a[0] = a[0] ^ state.wlow;
-    a[1] = a[1] ^ state.whigh;
+    a[0] ^= state.wlow;
+    a[1] ^= state.whigh;
 
     perm(a, b, c, &mut m);
 
     for _ in 0..3 {
         core::mem::swap(b, c);
-        a[0] = a[0] ^ state.wlow;
-        a[1] = a[1] ^ state.whigh;
+        a[0] ^= state.wlow;
+        a[1] ^= state.whigh;
         perm(a, b, c, &mut m);
     }
 }
 
 #[inline(always)]
 fn perm(a: &mut [u32; 12], b: &mut [u32; 16], c: &mut [u32; 16], m: &mut [u32; 16]) {
-    for i in 0..b.len() {
-        b[i] = b[i].wrapping_shl(17) | b[i].wrapping_shr(15);
+    for b in b.iter_mut() {
+        *b = b.wrapping_shl(17) | b.wrapping_shr(15);
     }
     perm_block(a, 0, b, c, m);
     perm_block(a, 4, b, c, m);

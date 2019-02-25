@@ -16,7 +16,7 @@ type BlockSize = U64;
 type Block = GenericArray<u8, BlockSize>;
 
 /// A structure that represents that state of a digest computation for the
-/// Sabal family of digest functions
+/// Shabal family of digest functions
 #[derive(Clone)]
 struct Engine256State {
     a: [u32; 12],

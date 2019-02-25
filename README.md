@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/spebern/shabal-rs.svg?branch=master)](https://travis-ci.org/spebern/shabal-rs)
+
 # shabal
 
 An implementation of the [Shabal][1] cryptographic hash algorithm.

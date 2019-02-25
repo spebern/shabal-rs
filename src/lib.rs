@@ -1,5 +1,16 @@
 //! An implementation of the [Shabal256][1] cryptographic hash algorithm.
 //!
+//! There are 5 standard algorithms specified in the Shabal standard:
+//!
+//! * `Shabal192`, which is the `Shabal` algorithm with the result truncated to 192 bits
+//! * `Shabal224`, which is the `Shabal` algorithm with the result truncated to 224 bits
+//! * `Shabal256`, which is the `Shabal` algorithm with the result truncated to 256 bits.
+//! * `Shabal384`, which is the `Shabal` algorithm with the result truncated to 384 bits.
+//! * `Shabal512`, which is the `Shabal` algorithm with the result not truncated.
+//!
+//! There is a single Shabal algorithm. All variants have different intialisation and truncate
+//! the result.
+//!
 //! # Usage
 //!
 //! ```rust

@@ -37,12 +37,12 @@ impl Engine256State {
         }
     }
 
-    pub fn process_block(&mut self, block: &Block) {
+    fn process_block(&mut self, block: &Block) {
         let block = unsafe { &*(block.as_ptr() as *const [u8; 64]) };
         compress(self, block);
     }
 
-    pub fn process_final_block(&mut self, block: &Block) {
+    fn process_final_block(&mut self, block: &Block) {
         let block = unsafe { &*(block.as_ptr() as *const [u8; 64]) };
         compress_final(self, block);
     }

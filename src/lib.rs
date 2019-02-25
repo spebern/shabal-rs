@@ -1,4 +1,4 @@
-//! An implementation of the [Shabal256][1] cryptographic hash algorithm.
+//! An implementation of the [Shabal][1] cryptographic hash algorithm.
 //!
 //! There are 5 standard algorithms specified in the Shabal standard:
 //!

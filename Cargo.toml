@@ -1,5 +1,5 @@
 [package]
-name = "shabal-rs"
+name = "shabal"
 version = "0.1.0"
 authors = ["bold <bold@cryptoguru.com>"]
 

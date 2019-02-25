@@ -4,9 +4,9 @@
 //!
 //! ```rust
 //! # #[macro_use] extern crate hex_literal;
-//! # extern crate shabal_rs;
+//! # extern crate shabal;
 //! # fn main() {
-//! use shabal_rs::{Shabal256, Digest};
+//! use shabal::{Shabal256, Digest};
 //!
 //! // create a Shabal256 hasher instance
 //! let mut hasher = Shabal256::new();

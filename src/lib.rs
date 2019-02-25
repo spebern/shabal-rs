@@ -40,4 +40,4 @@ mod consts;
 mod shabal;
 
 pub use digest::Digest;
-pub use shabal::{Shabal192, Shabal224, Shabal256, Shabal384};
+pub use shabal::{Shabal192, Shabal224, Shabal256, Shabal384, Shabal512};

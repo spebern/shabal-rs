@@ -1,8 +1,15 @@
 #![no_std]
+#[macro_use]
 extern crate digest;
 extern crate shabal;
 
-use digest::dev::one_million_a;
+use digest::dev::{digest_test, one_million_a};
+
+new_test!(shabal192_main, "shabal192", shabal::Shabal192, digest_test);
+new_test!(shabal224_main, "shabal224", shabal::Shabal224, digest_test);
+new_test!(shabal256_main, "shabal256", shabal::Shabal256, digest_test);
+new_test!(shabal384_main, "shabal384", shabal::Shabal384, digest_test);
+new_test!(shabal512_main, "shabal512", shabal::Shabal512, digest_test);
 
 #[test]
 fn sha192_1million_a() {

@@ -1,12 +1,15 @@
 use block_buffer::byteorder::{ByteOrder, LE};
 use block_buffer::BlockBuffer;
-use digest::generic_array::typenum::{U28, U32, U64};
+use digest::generic_array::typenum::{U24, U28, U32, U64};
 use digest::generic_array::GenericArray;
 pub use digest::{impl_write, Digest};
 use digest::{BlockInput, FixedOutput, Input, Reset};
 use opaque_debug::impl_opaque_debug;
 
-use consts::{A_INIT_224, A_INIT_256, B_INIT_224, B_INIT_256, C_INIT_224, C_INIT_256};
+use consts::{
+    A_INIT_192, A_INIT_224, A_INIT_256, B_INIT_192, B_INIT_224, B_INIT_256, C_INIT_192, C_INIT_224,
+    C_INIT_256,
+};
 
 type BlockSize = U64;
 type Block = GenericArray<u8, BlockSize>;
@@ -160,11 +163,55 @@ impl Reset for Shabal224 {
     }
 }
 
+/// The Shabal-256 hash algorithm with the Shabal-192 initial hash value. The result
+/// is truncated to 192 bits.
+#[derive(Clone)]
+pub struct Shabal192 {
+    engine: Engine256,
+}
+
+impl Default for Shabal192 {
+    fn default() -> Self {
+        Self {
+            engine: Engine256::new(&A_INIT_192, &B_INIT_192, &C_INIT_192),
+        }
+    }
+}
+
+impl BlockInput for Shabal192 {
+    type BlockSize = BlockSize;
+}
+
+impl Input for Shabal192 {
+    fn input<B: AsRef<[u8]>>(&mut self, input: B) {
+        self.engine.input(input.as_ref());
+    }
+}
+
+impl FixedOutput for Shabal192 {
+    type OutputSize = U24;
+
+    fn fixed_result(mut self) -> GenericArray<u8, Self::OutputSize> {
+        self.engine.finish();
+        let mut out = GenericArray::default();
+        LE::write_u32_into(&self.engine.state.b[10..16], out.as_mut_slice());
+        out
+    }
+}
+
+impl Reset for Shabal192 {
+    fn reset(&mut self) {
+        self.engine.reset(&A_INIT_192, &B_INIT_192, &C_INIT_192);
+    }
+}
+
 impl_opaque_debug!(Shabal256);
 impl_opaque_debug!(Shabal224);
+impl_opaque_debug!(Shabal192);
 
 impl_write!(Shabal256);
 impl_write!(Shabal224);
+impl_write!(Shabal192);
 
 trait ModuloSignedExt {
     fn modulo(&self, n: Self) -> Self;

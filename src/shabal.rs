@@ -46,6 +46,86 @@ impl Engine256State {
         let block = unsafe { &*(block.as_ptr() as *const [u8; 64]) };
         compress_final(self, block);
     }
+
+    #[inline(always)]
+    fn add_m(&mut self, m: &[u32; 16]) {
+        for i in 0..self.b.len() {
+            self.b[i] = self.b[i].wrapping_add(m[i]);
+        }
+    }
+
+    #[inline(always)]
+    fn sub_m(&mut self, m: &[u32; 16]) {
+        for i in 0..self.c.len() {
+            self.c[i] = self.c[i].wrapping_sub(m[i]);
+        }
+    }
+
+    #[inline(always)]
+    fn inc_w(&mut self) {
+        self.wlow = self.wlow.wrapping_add(1);
+        if self.wlow == 0 {
+            self.whigh = self.whigh.wrapping_add(1);
+        }
+    }
+
+    #[inline(always)]
+    fn xor_w(&mut self) {
+        self.a[0] ^= self.wlow;
+        self.a[1] ^= self.whigh;
+    }
+
+    #[inline(always)]
+    fn perm(&mut self, m: &mut [u32; 16]) {
+        for b in self.b.iter_mut() {
+            *b = b.wrapping_shl(17) | b.wrapping_shr(15);
+        }
+        self.perm_block(0, m);
+        self.perm_block(4, m);
+        self.perm_block(8, m);
+        let c_len = self.c.len() as isize;
+        for i in 0..12 {
+            self.a[i as usize] = self.a[i as usize]
+                .wrapping_add(self.c[(11 + i).modulo(c_len) as usize])
+                .wrapping_add(self.c[(15 + i).modulo(c_len) as usize])
+                .wrapping_add(self.c[(3 + i).modulo(c_len) as usize]);
+        }
+    }
+
+    #[inline(always)]
+    fn perm_block(&mut self, o: isize, m: &mut [u32; 16]) {
+        let a = &mut self.a;
+        let b = &mut self.b;
+        let c = &mut self.c;
+        for i in 0..16 {
+            let a_len = a.len() as isize;
+            let b_len = b.len() as isize;
+            let c_len = c.len() as isize;
+
+            let xa0 = a[((i + o).modulo(a_len)) as usize];
+            let xa1 = a[((i + o - 1).modulo(a_len)) as usize];
+            let xb0 = b[i as usize];
+            let xb1 = b[((13 + i).modulo(b_len)) as usize];
+            let xb2 = b[((9 + i).modulo(b_len)) as usize];
+            let xb3 = b[((6 + i).modulo(b_len)) as usize];
+            let xc = c[((8 - i).modulo(c_len)) as usize];
+            let xm = m[i as usize];
+
+            a[((i + o).modulo(a_len)) as usize] =
+                (xa0 ^ (xa1.wrapping_shl(15) | xa1.wrapping_shr(17)).wrapping_mul(5) ^ xc)
+                    .wrapping_mul(3)
+                    ^ xb1
+                    ^ (xb2 & !xb3)
+                    ^ xm;
+            b[i as usize] = !((xb0.wrapping_shl(1) | xb0.wrapping_shr(31))
+                ^ a[((i + o).modulo(a_len)) as usize]);
+        }
+    }
+
+    #[inline(always)]
+    fn swap_b_c(&mut self) {
+        core::mem::swap(&mut self.b, &mut self.c);
+    }
 }
 
 /// A structure that keeps track of the state of the Shabal operation and
@@ -317,106 +397,31 @@ macro_rules! modulo_signed_ext_impl {
 }
 modulo_signed_ext_impl! { isize }
 
-fn compress(state: &mut Engine256State, input: &[u8; 64]) {
-    let a = &mut state.a;
-    let b = &mut state.b;
-    let c = &mut state.c;
-
+#[inline(always)]
+fn read_m(input: &[u8; 64]) -> [u32; 16] {
     let mut m = [0; 16];
     LE::read_u32_into(input, &mut m);
+    m
+}
 
-    for i in 0..b.len() {
-        b[i] = b[i].wrapping_add(m[i]);
-    }
-
-    a[0] ^= state.wlow;
-    a[1] ^= state.whigh;
-
-    perm(a, b, c, &mut m);
-
-    for i in 0..c.len() {
-        c[i] = c[i].wrapping_sub(m[i]);
-    }
-
-    core::mem::swap(b, c);
-
-    state.wlow = state.wlow.wrapping_add(1);
-    if state.wlow == 0 {
-        state.whigh = state.whigh.wrapping_add(1);
-    }
+fn compress(state: &mut Engine256State, input: &[u8; 64]) {
+    let mut m = read_m(input);
+    state.add_m(&m);
+    state.xor_w();
+    state.perm(&mut m);
+    state.sub_m(&m);
+    state.swap_b_c();
+    state.inc_w();
 }
 
 fn compress_final(state: &mut Engine256State, input: &[u8; 64]) {
-    let a = &mut state.a;
-    let b = &mut state.b;
-    let c = &mut state.c;
-
-    let mut m = [0; 16];
-    LE::read_u32_into(input, &mut m);
-
-    for i in 0..b.len() {
-        b[i] = b[i].wrapping_add(m[i]);
-    }
-
-    a[0] ^= state.wlow;
-    a[1] ^= state.whigh;
-
-    perm(a, b, c, &mut m);
-
+    let mut m = read_m(input);
+    state.add_m(&m);
+    state.xor_w();
+    state.perm(&mut m);
     for _ in 0..3 {
-        core::mem::swap(b, c);
-        a[0] ^= state.wlow;
-        a[1] ^= state.whigh;
-        perm(a, b, c, &mut m);
-    }
-}
-
-#[inline(always)]
-fn perm(a: &mut [u32; 12], b: &mut [u32; 16], c: &mut [u32; 16], m: &mut [u32; 16]) {
-    for b in b.iter_mut() {
-        *b = b.wrapping_shl(17) | b.wrapping_shr(15);
-    }
-    perm_block(a, 0, b, c, m);
-    perm_block(a, 4, b, c, m);
-    perm_block(a, 8, b, c, m);
-    let c_len = c.len() as isize;
-    for i in 0..12 {
-        a[i as usize] = a[i as usize]
-            .wrapping_add(c[(11 + i).modulo(c_len) as usize])
-            .wrapping_add(c[(15 + i).modulo(c_len) as usize])
-            .wrapping_add(c[(3 + i).modulo(c_len) as usize]);
-    }
-}
-
-#[inline(always)]
-fn perm_block(
-    a: &mut [u32; 12],
-    o: isize,
-    b: &mut [u32; 16],
-    c: &mut [u32; 16],
-    m: &mut [u32; 16],
-) {
-    for i in 0..16 {
-        let a_len = a.len() as isize;
-        let b_len = b.len() as isize;
-        let c_len = c.len() as isize;
-
-        let xa0 = a[((i + o).modulo(a_len)) as usize];
-        let xa1 = a[((i + o - 1).modulo(a_len)) as usize];
-        let xb0 = b[i as usize];
-        let xb1 = b[((13 + i).modulo(b_len)) as usize];
-        let xb2 = b[((9 + i).modulo(b_len)) as usize];
-        let xb3 = b[((6 + i).modulo(b_len)) as usize];
-        let xc = c[((8 - i).modulo(c_len)) as usize];
-        let xm = m[i as usize];
-
-        a[((i + o).modulo(a_len)) as usize] =
-            (xa0 ^ (xa1.wrapping_shl(15) | xa1.wrapping_shr(17)).wrapping_mul(5) ^ xc)
-                .wrapping_mul(3)
-                ^ xb1
-                ^ (xb2 & !xb3)
-                ^ xm;
-        b[i as usize] =
-            !((xb0.wrapping_shl(1) | xb0.wrapping_shr(31)) ^ a[((i + o).modulo(a_len)) as usize]);
+        state.swap_b_c();
+        state.xor_w();
+        state.perm(&mut m);
     }
 }

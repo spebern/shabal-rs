@@ -37,7 +37,7 @@ pub extern crate digest;
 extern crate std;
 
 mod consts;
-mod shabal256;
+mod shabal;
 
 pub use digest::Digest;
-pub use shabal256::{Shabal192, Shabal224, Shabal256, Shabal384};
+pub use shabal::{Shabal192, Shabal224, Shabal256, Shabal384};

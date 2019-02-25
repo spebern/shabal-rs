@@ -89,12 +89,7 @@ pub struct Shabal384 {
 impl Default for Shabal384 {
     fn default() -> Self {
         Self {
-            engine: Engine256::new(
-                &A_INIT_384,
-                &B_INIT_384,
-                &C_INIT_384,
-                }
-            ),
+            engine: Engine256::new(&A_INIT_384, &B_INIT_384, &C_INIT_384),
         }
     }
 }

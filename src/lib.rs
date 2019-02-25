@@ -8,8 +8,8 @@
 //! * `Shabal384`, which is the `Shabal` algorithm with the result truncated to 384 bits.
 //! * `Shabal512`, which is the `Shabal` algorithm with the result not truncated.
 //!
-//! There is a single Shabal algorithm. All variants have different intialisation and truncate
-//! the result.
+//! There is a single Shabal algorithm. All variants have different intialisation and apart
+//! Shabal512 truncate the result.
 //!
 //! # Usage
 //!

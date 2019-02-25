@@ -7,8 +7,8 @@ use digest::{BlockInput, FixedOutput, Input, Reset};
 use opaque_debug::impl_opaque_debug;
 
 use consts::{
-    A_INIT_192, A_INIT_224, A_INIT_256, A_INIT_384, B_INIT_192, B_INIT_224, B_INIT_256, B_INIT_384,
-    C_INIT_192, C_INIT_224, C_INIT_256, C_INIT_384,
+    A_INIT_192, A_INIT_224, A_INIT_256, A_INIT_384, A_INIT_512, B_INIT_192, B_INIT_224, B_INIT_256,
+    B_INIT_384, B_INIT_512, C_INIT_192, C_INIT_224, C_INIT_256, C_INIT_384, C_INIT_512,
 };
 
 type BlockSize = U64;
@@ -77,6 +77,47 @@ impl Engine256 {
     fn reset(&mut self, a: &[u32; 12], b: &[u32; 16], c: &[u32; 16]) {
         self.state = Engine256State::new(a, b, c);
         self.buffer.reset();
+    }
+}
+
+/// The Shabal-256 hash algorithm with the Shabal-512 initial hash value.
+#[derive(Clone)]
+pub struct Shabal512 {
+    engine: Engine256,
+}
+
+impl Default for Shabal512 {
+    fn default() -> Self {
+        Self {
+            engine: Engine256::new(&A_INIT_512, &B_INIT_512, &C_INIT_512),
+        }
+    }
+}
+
+impl BlockInput for Shabal512 {
+    type BlockSize = BlockSize;
+}
+
+impl Input for Shabal512 {
+    fn input<B: AsRef<[u8]>>(&mut self, input: B) {
+        self.engine.input(input.as_ref());
+    }
+}
+
+impl FixedOutput for Shabal512 {
+    type OutputSize = U64;
+
+    fn fixed_result(mut self) -> GenericArray<u8, Self::OutputSize> {
+        self.engine.finish();
+        let mut out = GenericArray::default();
+        LE::write_u32_into(&self.engine.state.b[0..16], out.as_mut_slice());
+        out
+    }
+}
+
+impl Reset for Shabal512 {
+    fn reset(&mut self) {
+        self.engine.reset(&A_INIT_512, &B_INIT_512, &C_INIT_512);
     }
 }
 
@@ -246,11 +287,13 @@ impl Reset for Shabal192 {
     }
 }
 
+impl_opaque_debug!(Shabal512);
 impl_opaque_debug!(Shabal384);
 impl_opaque_debug!(Shabal256);
 impl_opaque_debug!(Shabal224);
 impl_opaque_debug!(Shabal192);
 
+impl_write!(Shabal512);
 impl_write!(Shabal384);
 impl_write!(Shabal256);
 impl_write!(Shabal224);

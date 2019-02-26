@@ -44,6 +44,8 @@ extern crate block_buffer;
 extern crate opaque_debug;
 #[macro_use]
 pub extern crate digest;
+#[macro_use]
+extern crate crunchy;
 #[cfg(feature = "std")]
 extern crate std;
 

@@ -97,7 +97,10 @@ impl EngineState {
         let a = &mut self.a;
         let b = &mut self.b;
         let c = &mut self.c;
-        for i in 0..16 {
+
+        unroll! {
+        for j in 0..16 {
+            let i = j as isize;
             let a_len = a.len() as isize;
             let b_len = b.len() as isize;
             let c_len = c.len() as isize;
@@ -113,12 +116,13 @@ impl EngineState {
 
             a[((i + o).modulo(a_len)) as usize] =
                 (xa0 ^ (xa1.wrapping_shl(15) | xa1.wrapping_shr(17)).wrapping_mul(5) ^ xc)
-                    .wrapping_mul(3)
-                    ^ xb1
-                    ^ (xb2 & !xb3)
-                    ^ xm;
+                .wrapping_mul(3)
+                ^ xb1
+                ^ (xb2 & !xb3)
+                ^ xm;
             b[i as usize] = !((xb0.wrapping_shl(1) | xb0.wrapping_shr(31))
-                ^ a[((i + o).modulo(a_len)) as usize]);
+                              ^ a[((i + o).modulo(a_len)) as usize]);
+        }
         }
     }
 

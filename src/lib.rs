@@ -48,6 +48,7 @@ pub extern crate digest;
 extern crate crunchy;
 #[cfg(feature = "std")]
 extern crate std;
+extern crate unchecked_index;
 
 mod consts;
 mod shabal;

@@ -6,6 +6,7 @@ use digest::generic_array::GenericArray;
 pub use digest::{impl_write, Digest};
 use digest::{BlockInput, FixedOutput, Input, Reset};
 use opaque_debug::impl_opaque_debug;
+use unchecked_index::unchecked_index;
 
 use consts::{
     A_INIT_192, A_INIT_224, A_INIT_256, A_INIT_384, A_INIT_512, B_INIT_192, B_INIT_224, B_INIT_256,
@@ -76,7 +77,7 @@ impl EngineState {
     }
 
     #[inline(always)]
-    fn perm(&mut self, m: &mut [u32; 16]) {
+    unsafe fn perm(&mut self, m: &mut [u32; 16]) {
         for b in self.b.iter_mut() {
             *b = b.wrapping_shl(17) | b.wrapping_shr(15);
         }
@@ -93,10 +94,10 @@ impl EngineState {
     }
 
     #[inline(always)]
-    fn perm_block(&mut self, o: isize, m: &mut [u32; 16]) {
-        let a = &mut self.a;
-        let b = &mut self.b;
-        let c = &mut self.c;
+    unsafe fn perm_block(&mut self, o: isize, m: &mut [u32; 16]) {
+        let mut a = unchecked_index(self.a);
+        let mut b = unchecked_index(self.b);
+        let c = unchecked_index(self.c);
 
         unroll! {
         for j in 0..16 {
@@ -412,7 +413,7 @@ fn compress(state: &mut EngineState, input: &[u8; 64]) {
     let mut m = read_m(input);
     state.add_m(&m);
     state.xor_w();
-    state.perm(&mut m);
+    unsafe { state.perm(&mut m) };
     state.sub_m(&m);
     state.swap_b_c();
     state.inc_w();
@@ -422,10 +423,10 @@ fn compress_final(state: &mut EngineState, input: &[u8; 64]) {
     let mut m = read_m(input);
     state.add_m(&m);
     state.xor_w();
-    state.perm(&mut m);
+    unsafe { state.perm(&mut m) };
     for _ in 0..3 {
         state.swap_b_c();
         state.xor_w();
-        state.perm(&mut m);
+        unsafe { state.perm(&mut m) };
     }
 }

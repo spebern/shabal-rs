@@ -95,9 +95,9 @@ impl EngineState {
 
     #[inline(always)]
     unsafe fn perm_block(&mut self, o: isize, m: &mut [u32; 16]) {
-        let mut a = unchecked_index(self.a);
-        let mut b = unchecked_index(self.b);
-        let c = unchecked_index(self.c);
+        let mut a = unchecked_index(&mut self.a);
+        let mut b = unchecked_index(&mut self.b);
+        let c = unchecked_index(&mut self.c);
 
         unroll! {
         for j in 0..16 {

@@ -77,7 +77,7 @@ impl EngineState {
     }
 
     #[inline(always)]
-    unsafe fn perm(&mut self, m: &mut [u32; 16]) {
+    unsafe fn perm(&mut self, m: &[u32; 16]) {
         for b in self.b.iter_mut() {
             *b = b.wrapping_shl(17) | b.wrapping_shr(15);
         }
@@ -94,7 +94,7 @@ impl EngineState {
     }
 
     #[inline(always)]
-    unsafe fn perm_block(&mut self, o: isize, m: &mut [u32; 16]) {
+    unsafe fn perm_block(&mut self, o: isize, m: &[u32; 16]) {
         let mut a = unchecked_index(&mut self.a);
         let mut b = unchecked_index(&mut self.b);
         let c = unchecked_index(&mut self.c);
@@ -410,23 +410,23 @@ fn read_m(input: &[u8; 64]) -> [u32; 16] {
 }
 
 fn compress(state: &mut EngineState, input: &[u8; 64]) {
-    let mut m = read_m(input);
+    let m = read_m(input);
     state.add_m(&m);
     state.xor_w();
-    unsafe { state.perm(&mut m) };
+    unsafe { state.perm(&m) };
     state.sub_m(&m);
     state.swap_b_c();
     state.inc_w();
 }
 
 fn compress_final(state: &mut EngineState, input: &[u8; 64]) {
-    let mut m = read_m(input);
+    let m = read_m(input);
     state.add_m(&m);
     state.xor_w();
-    unsafe { state.perm(&mut m) };
+    unsafe { state.perm(&m) };
     for _ in 0..3 {
         state.swap_b_c();
         state.xor_w();
-        unsafe { state.perm(&mut m) };
+        unsafe { state.perm(&m) };
     }
 }

@@ -49,15 +49,15 @@ impl EngineState {
 
     #[inline(always)]
     fn add_m(&mut self, m: &[u32; 16]) {
-        for i in 0..self.b.len() {
-            self.b[i] = self.b[i].wrapping_add(m[i]);
+        for (b, m) in self.b.iter_mut().zip(m) {
+            *b = b.wrapping_add(*m);
         }
     }
 
     #[inline(always)]
     fn sub_m(&mut self, m: &[u32; 16]) {
-        for i in 0..self.c.len() {
-            self.c[i] = self.c[i].wrapping_sub(m[i]);
+        for (c, m) in self.c.iter_mut().zip(m) {
+            *c = c.wrapping_sub(*m);
         }
     }
 

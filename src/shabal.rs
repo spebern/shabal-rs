@@ -47,21 +47,21 @@ impl EngineState {
         compress_final(self, block);
     }
 
-    #[inline(always)]
+    #[inline]
     fn add_m(&mut self, m: &[u32; 16]) {
         for (b, m) in self.b.iter_mut().zip(m) {
             *b = b.wrapping_add(*m);
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn sub_m(&mut self, m: &[u32; 16]) {
         for (c, m) in self.c.iter_mut().zip(m) {
             *c = c.wrapping_sub(*m);
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn inc_w(&mut self) {
         self.wlow = self.wlow.wrapping_add(1);
         if self.wlow == 0 {
@@ -69,13 +69,13 @@ impl EngineState {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn xor_w(&mut self) {
         self.a[0] ^= self.wlow;
         self.a[1] ^= self.whigh;
     }
 
-    #[inline(always)]
+    #[inline]
     unsafe fn perm(&mut self, m: &[u32; 16]) {
         for b in self.b.iter_mut() {
             *b = b.wrapping_shl(17) | b.wrapping_shr(15);
@@ -134,7 +134,7 @@ impl EngineState {
             .wrapping_add(c[14]);
     }
 
-    #[inline(always)]
+    #[inline]
     fn perm_elt(
         &mut self,
         xa0: usize,
@@ -160,7 +160,7 @@ impl EngineState {
         b[xb0] = !((b[xb0].wrapping_shl(1) | b[xb0].wrapping_shr(31)) ^ a[xa0]);
     }
 
-    #[inline(always)]
+    #[inline]
     unsafe fn perm_blocks(&mut self, m: &[u32; 16]) {
         self.perm_elt(0, 11, 0, 13, 9, 6, 8, m[0]);
         self.perm_elt(1, 0, 1, 14, 10, 7, 7, m[1]);
@@ -212,7 +212,7 @@ impl EngineState {
         self.perm_elt(11, 10, 15, 12, 8, 5, 9, m[15]);
     }
 
-    #[inline(always)]
+    #[inline]
     fn swap_b_c(&mut self) {
         core::mem::swap(&mut self.b, &mut self.c);
     }
@@ -472,7 +472,7 @@ impl_write!(Shabal256);
 impl_write!(Shabal224);
 impl_write!(Shabal192);
 
-#[inline(always)]
+#[inline]
 fn read_m(input: &[u8; 64]) -> [u32; 16] {
     let mut m = [0; 16];
     LE::read_u32_into(input, &mut m);

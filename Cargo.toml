@@ -13,8 +13,6 @@ categories = ["cryptography", "no-std"]
 digest = "0.8"
 block-buffer = "0.7"
 opaque-debug = "0.2"
-crunchy = "0.2"
-unchecked-index = "0.2"
 
 [dev-dependencies]
 digest = { version = "0.8", features = ["dev"] }

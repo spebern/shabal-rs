@@ -6,7 +6,6 @@ use digest::generic_array::GenericArray;
 pub use digest::{impl_write, Digest};
 use digest::{BlockInput, FixedOutput, Input, Reset};
 use opaque_debug::impl_opaque_debug;
-use unchecked_index::unchecked_index;
 
 use consts::{
     A_INIT_192, A_INIT_224, A_INIT_256, A_INIT_384, A_INIT_512, B_INIT_192, B_INIT_224, B_INIT_256,
@@ -81,50 +80,136 @@ impl EngineState {
         for b in self.b.iter_mut() {
             *b = b.wrapping_shl(17) | b.wrapping_shr(15);
         }
-        self.perm_block(0, m);
-        self.perm_block(4, m);
-        self.perm_block(8, m);
-        let c_len = self.c.len() as isize;
-        for i in 0..12 {
-            self.a[i as usize] = self.a[i as usize]
-                .wrapping_add(self.c[(11 + i).modulo(c_len) as usize])
-                .wrapping_add(self.c[(15 + i).modulo(c_len) as usize])
-                .wrapping_add(self.c[(3 + i).modulo(c_len) as usize]);
-        }
+        self.perm_blocks(m);
+
+        let a = &mut self.a;
+        let c = &self.c;
+        a[0] = a[0]
+            .wrapping_add(c[11])
+            .wrapping_add(c[15])
+            .wrapping_add(c[3]);
+        a[1] = a[1]
+            .wrapping_add(c[12])
+            .wrapping_add(c[0])
+            .wrapping_add(c[4]);
+        a[2] = a[2]
+            .wrapping_add(c[13])
+            .wrapping_add(c[1])
+            .wrapping_add(c[5]);
+        a[3] = a[3]
+            .wrapping_add(c[14])
+            .wrapping_add(c[2])
+            .wrapping_add(c[6]);
+        a[4] = a[4]
+            .wrapping_add(c[15])
+            .wrapping_add(c[3])
+            .wrapping_add(c[7]);
+        a[5] = a[5]
+            .wrapping_add(c[0])
+            .wrapping_add(c[4])
+            .wrapping_add(c[8]);
+        a[6] = a[6]
+            .wrapping_add(c[1])
+            .wrapping_add(c[5])
+            .wrapping_add(c[9]);
+        a[7] = a[7]
+            .wrapping_add(c[2])
+            .wrapping_add(c[6])
+            .wrapping_add(c[10]);
+        a[8] = a[8]
+            .wrapping_add(c[3])
+            .wrapping_add(c[7])
+            .wrapping_add(c[11]);
+        a[9] = a[9]
+            .wrapping_add(c[4])
+            .wrapping_add(c[8])
+            .wrapping_add(c[12]);
+        a[10] = a[10]
+            .wrapping_add(c[5])
+            .wrapping_add(c[9])
+            .wrapping_add(c[13]);
+        a[11] = a[11]
+            .wrapping_add(c[6])
+            .wrapping_add(c[10])
+            .wrapping_add(c[14]);
     }
 
     #[inline(always)]
-    unsafe fn perm_block(&mut self, o: isize, m: &[u32; 16]) {
-        let mut a = unchecked_index(&mut self.a);
-        let mut b = unchecked_index(&mut self.b);
-        let c = unchecked_index(&mut self.c);
+    fn perm_elt(
+        &mut self,
+        xa0: usize,
+        xa1: usize,
+        xb0: usize,
+        xb1: usize,
+        xb2: usize,
+        xb3: usize,
+        xc0: usize,
+        xm: u32,
+    ) {
+        let a = &mut self.a;
+        let b = &mut self.b;
+        let xc = self.c[xc0];
 
-        unroll! {
-        for j in 0..16 {
-            let i = j as isize;
-            let a_len = a.len() as isize;
-            let b_len = b.len() as isize;
-            let c_len = c.len() as isize;
+        a[xa0] = (a[xa0]
+            ^ ((a[xa1].wrapping_shl(15u32) | a[xa1].wrapping_shr(17u32)).wrapping_mul(5u32))
+            ^ xc)
+            .wrapping_mul(3u32)
+            ^ b[xb1]
+            ^ (b[xb2] & !b[xb3])
+            ^ xm;
+        b[xb0] = !((b[xb0].wrapping_shl(1) | b[xb0].wrapping_shr(31)) ^ a[xa0]);
+    }
 
-            let xa0 = a[((i + o).modulo(a_len)) as usize];
-            let xa1 = a[((i + o - 1).modulo(a_len)) as usize];
-            let xb0 = b[i as usize];
-            let xb1 = b[((13 + i).modulo(b_len)) as usize];
-            let xb2 = b[((9 + i).modulo(b_len)) as usize];
-            let xb3 = b[((6 + i).modulo(b_len)) as usize];
-            let xc = c[((8 - i).modulo(c_len)) as usize];
-            let xm = m[i as usize];
-
-            a[((i + o).modulo(a_len)) as usize] =
-                (xa0 ^ (xa1.wrapping_shl(15) | xa1.wrapping_shr(17)).wrapping_mul(5) ^ xc)
-                .wrapping_mul(3)
-                ^ xb1
-                ^ (xb2 & !xb3)
-                ^ xm;
-            b[i as usize] = !((xb0.wrapping_shl(1) | xb0.wrapping_shr(31))
-                              ^ a[((i + o).modulo(a_len)) as usize]);
-        }
-        }
+    #[inline(always)]
+    unsafe fn perm_blocks(&mut self, m: &[u32; 16]) {
+        self.perm_elt(0, 11, 0, 13, 9, 6, 8, m[0]);
+        self.perm_elt(1, 0, 1, 14, 10, 7, 7, m[1]);
+        self.perm_elt(2, 1, 2, 15, 11, 8, 6, m[2]);
+        self.perm_elt(3, 2, 3, 0, 12, 9, 5, m[3]);
+        self.perm_elt(4, 3, 4, 1, 13, 10, 4, m[4]);
+        self.perm_elt(5, 4, 5, 2, 14, 11, 3, m[5]);
+        self.perm_elt(6, 5, 6, 3, 15, 12, 2, m[6]);
+        self.perm_elt(7, 6, 7, 4, 0, 13, 1, m[7]);
+        self.perm_elt(8, 7, 8, 5, 1, 14, 0, m[8]);
+        self.perm_elt(9, 8, 9, 6, 2, 15, 15, m[9]);
+        self.perm_elt(10, 9, 10, 7, 3, 0, 14, m[10]);
+        self.perm_elt(11, 10, 11, 8, 4, 1, 13, m[11]);
+        self.perm_elt(0, 11, 12, 9, 5, 2, 12, m[12]);
+        self.perm_elt(1, 0, 13, 10, 6, 3, 11, m[13]);
+        self.perm_elt(2, 1, 14, 11, 7, 4, 10, m[14]);
+        self.perm_elt(3, 2, 15, 12, 8, 5, 9, m[15]);
+        self.perm_elt(4, 3, 0, 13, 9, 6, 8, m[0]);
+        self.perm_elt(5, 4, 1, 14, 10, 7, 7, m[1]);
+        self.perm_elt(6, 5, 2, 15, 11, 8, 6, m[2]);
+        self.perm_elt(7, 6, 3, 0, 12, 9, 5, m[3]);
+        self.perm_elt(8, 7, 4, 1, 13, 10, 4, m[4]);
+        self.perm_elt(9, 8, 5, 2, 14, 11, 3, m[5]);
+        self.perm_elt(10, 9, 6, 3, 15, 12, 2, m[6]);
+        self.perm_elt(11, 10, 7, 4, 0, 13, 1, m[7]);
+        self.perm_elt(0, 11, 8, 5, 1, 14, 0, m[8]);
+        self.perm_elt(1, 0, 9, 6, 2, 15, 15, m[9]);
+        self.perm_elt(2, 1, 10, 7, 3, 0, 14, m[10]);
+        self.perm_elt(3, 2, 11, 8, 4, 1, 13, m[11]);
+        self.perm_elt(4, 3, 12, 9, 5, 2, 12, m[12]);
+        self.perm_elt(5, 4, 13, 10, 6, 3, 11, m[13]);
+        self.perm_elt(6, 5, 14, 11, 7, 4, 10, m[14]);
+        self.perm_elt(7, 6, 15, 12, 8, 5, 9, m[15]);
+        self.perm_elt(8, 7, 0, 13, 9, 6, 8, m[0]);
+        self.perm_elt(9, 8, 1, 14, 10, 7, 7, m[1]);
+        self.perm_elt(10, 9, 2, 15, 11, 8, 6, m[2]);
+        self.perm_elt(11, 10, 3, 0, 12, 9, 5, m[3]);
+        self.perm_elt(0, 11, 4, 1, 13, 10, 4, m[4]);
+        self.perm_elt(1, 0, 5, 2, 14, 11, 3, m[5]);
+        self.perm_elt(2, 1, 6, 3, 15, 12, 2, m[6]);
+        self.perm_elt(3, 2, 7, 4, 0, 13, 1, m[7]);
+        self.perm_elt(4, 3, 8, 5, 1, 14, 0, m[8]);
+        self.perm_elt(5, 4, 9, 6, 2, 15, 15, m[9]);
+        self.perm_elt(6, 5, 10, 7, 3, 0, 14, m[10]);
+        self.perm_elt(7, 6, 11, 8, 4, 1, 13, m[11]);
+        self.perm_elt(8, 7, 12, 9, 5, 2, 12, m[12]);
+        self.perm_elt(9, 8, 13, 10, 6, 3, 11, m[13]);
+        self.perm_elt(10, 9, 14, 11, 7, 4, 10, m[14]);
+        self.perm_elt(11, 10, 15, 12, 8, 5, 9, m[15]);
     }
 
     #[inline(always)]
@@ -386,21 +471,6 @@ impl_write!(Shabal384);
 impl_write!(Shabal256);
 impl_write!(Shabal224);
 impl_write!(Shabal192);
-
-trait ModuloSignedExt {
-    fn modulo(&self, n: Self) -> Self;
-}
-macro_rules! modulo_signed_ext_impl {
-    ($($t:ty)*) => ($(
-        impl ModuloSignedExt for $t {
-            #[inline(always)]
-            fn modulo(&self, n: Self) -> Self {
-                (self % n + n) % n
-            }
-        }
-    )*)
-}
-modulo_signed_ext_impl! { isize }
 
 #[inline(always)]
 fn read_m(input: &[u8; 64]) -> [u32; 16] {

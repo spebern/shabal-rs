@@ -12,7 +12,7 @@ categories = ["cryptography", "no-std"]
 [dependencies]
 digest = "0.8.0"
 block-buffer = "0.7.3"
-opaque-debug = "0.2.2"
+opaque-debug = "0.3.0"
 
 [dev-dependencies]
 digest = { version = "0.8.0", features = ["dev"] }

@@ -10,12 +10,12 @@ keywords = ["crypto", "shabal", "hash", "digest"]
 categories = ["cryptography", "no-std"]
 
 [dependencies]
-digest = "0.8.0"
+digest = "0.9.0"
 block-buffer = "0.7.3"
 opaque-debug = "0.2.2"
 
 [dev-dependencies]
-digest = { version = "0.8.0", features = ["dev"] }
+digest = { version = "0.9.0", features = ["dev"] }
 hex-literal = "0.2.0"
 
 [features]
